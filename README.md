@@ -34,148 +34,97 @@ This guide covers:
  * Hosted on: Bangladesh Server
  */
 
-// SECURITY: Replace this with a strong, unique random string
+// 1. CONFIGURATION
+// Ensure there are no spaces around your key
 define('PROXY_SECRET', 'YOUR_STRONG_SECRET_KEY_HERE');
 
-// 1. Receive Input
+// 2. RECEIVE INPUT
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
-// 2. Authenticate Request
-if (!isset($data['secret']) || $data['secret'] !== PROXY_SECRET) {
-    // ---------------------------------------------------------
-    // UNAUTHORIZED PAGE DESIGN (Funny & Beautiful)
-    // ---------------------------------------------------------
+// 3. AUTHENTICATION & SECURITY CHECK
+if (!isset($data['secret']) || trim($data['secret']) !== PROXY_SECRET) {
+    // Return 403 Forbidden header
     http_response_code(403);
     
-    // Array of funny messages
-    $messages = [
+    // List of funny messages
+    $msgs = [
         "These aren't the droids you're looking for.",
         "Nothing to see here, just a lonely server pixel.",
         "Houston, we have a problem. You are lost!",
-        "This is a top-secret area. Even I don't know what's here.",
-        "Searching for the meaning of life? It's not on this URL.",
         "Oops! You took a wrong turn at the internet.",
-        "Error 404: Pizza not found. (But this page is here)",
-        "Why are you here? Go build something amazing!",
-        "I'm sorry Dave, I'm afraid I can't do that."
+        "Error 404: Pizza not found.",
+        "Why are you here? Go build something amazing!"
     ];
-    
-    // Pick one random message
-    $randomMessage = $messages[array_rand($messages)];
-    ?>
-    <!DOCTYPE html>
+    $msg = $msgs[array_rand($msgs)];
+
+    // Output HTML using PHP echo to prevent formatting/syntax errors
+    echo '<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Restricted Area</title>
         <style>
-            body {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                height: 100vh;
-                margin: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                color: white;
-                text-align: center;
-                overflow: hidden;
-            }
-            .container {
-                background: rgba(255, 255, 255, 0.15);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                padding: 3rem;
-                border-radius: 24px;
-                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-                border: 1px solid rgba(255, 255, 255, 0.18);
-                max-width: 90%;
-                width: 450px;
-                transition: transform 0.3s ease;
-            }
-            .container:hover {
-                transform: translateY(-5px);
-            }
-            h1 {
-                font-size: 2.5rem;
-                margin: 0 0 1rem 0;
-                font-weight: 700;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            }
-            p {
-                font-size: 1.2rem;
-                line-height: 1.6;
-                opacity: 0.95;
-                font-weight: 400;
-            }
-            .emoji {
-                font-size: 4rem;
-                display: block;
-                margin-bottom: 1rem;
-                animation: float 3s ease-in-out infinite;
-            }
-            @keyframes float {
-                0% { transform: translateY(0px); }
-                50% { transform: translateY(-10px); }
-                100% { transform: translateY(0px); }
-            }
+            body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; font-family: sans-serif; color: white; text-align: center; }
+            .container { background: rgba(255, 255, 255, 0.15); padding: 3rem; border-radius: 24px; width: 450px; max-width: 90%; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); }
+            h1 { margin-top: 0; }
+            .emoji { font-size: 4rem; display: block; margin-bottom: 1rem; }
         </style>
     </head>
     <body>
         <div class="container">
             <span class="emoji">👻</span>
             <h1>Access Denied</h1>
-            <p><?php echo $randomMessage; ?></p>
+            <p>' . $msg . '</p>
         </div>
     </body>
-    </html>
-    <?php
-    exit; // Stop execution here so the proxy logic doesn't run
+    </html>';
+    
+    // Stop execution strictly
+    exit;
 }
 
 // ---------------------------------------------------------
-// PROXY LOGIC (Only runs if secret key is correct)
+// PROXY LOGIC (Only runs if Key is Correct)
 // ---------------------------------------------------------
 
-// 3. Initialize cURL
 $ch = curl_init();
-$target_url = $data['target_url'];
-$method = $data['method']; // 'POST' or 'GET'
+$target_url = isset($data['target_url']) ? $data['target_url'] : '';
+$method = isset($data['method']) ? $data['method'] : 'POST';
 $headers = isset($data['headers']) ? $data['headers'] : [];
 $payload = isset($data['body']) ? $data['body'] : null;
 
-// 4. Configure cURL
+if (empty($target_url)) {
+    echo json_encode(['error' => 'No target URL provided']);
+    exit;
+}
+
+// Configure cURL
 curl_setopt($ch, CURLOPT_URL, $target_url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-
-// SSL Verification (Disable if necessary for shared hosting, otherwise keep true)
 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0); 
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-
-// Set Forwarded Headers
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-// Handle POST/GET Methods
 if ($method === 'POST') {
     curl_setopt($ch, CURLOPT_POST, true);
-    // If payload is array, encode it. If string (already encoded), pass as is.
     $post_fields = is_array($payload) ? json_encode($payload) : $payload;
     curl_setopt($ch, CURLOPT_POSTFIELDS, $post_fields);
 }
 
-// 5. Execute & Return
+// Execute
 $response = curl_exec($ch);
 $error = curl_error($ch);
 curl_close($ch);
 
+// Return Response
 if ($error) {
     header('Content-Type: application/json');
     echo json_encode(['proxy_error' => $error]);
 } else {
-    // Pass raw Nagad response back to VPS
+    // IMPORTANT: Do NOT set JSON header here, just pass the raw response from Nagad
     echo $response;
 }
 ?>
