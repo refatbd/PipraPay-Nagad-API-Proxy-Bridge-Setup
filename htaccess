@@ -1,0 +1,12 @@
+RewriteEngine On
+
+# 1. Redirect external .php requests to extensionless URL
+# (If someone types /file.php, they are redirected to /file)
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.php[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L,NE]
+
+# 2. Internally map extensionless URLs to .php files
+# (If someone types /file, the server serves /file.php)
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^(.*)$ $1.php [L]
