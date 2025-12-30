@@ -43,11 +43,101 @@ $data = json_decode($input, true);
 
 // 2. Authenticate Request
 if (!isset($data['secret']) || $data['secret'] !== PROXY_SECRET) {
+    // ---------------------------------------------------------
+    // UNAUTHORIZED PAGE DESIGN (Funny & Beautiful)
+    // ---------------------------------------------------------
     http_response_code(403);
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized Proxy Access']);
-    exit;
+    
+    // Array of funny messages
+    $messages = [
+        "These aren't the droids you're looking for.",
+        "Nothing to see here, just a lonely server pixel.",
+        "Houston, we have a problem. You are lost!",
+        "This is a top-secret area. Even I don't know what's here.",
+        "Searching for the meaning of life? It's not on this URL.",
+        "Oops! You took a wrong turn at the internet.",
+        "Error 404: Pizza not found. (But this page is here)",
+        "Why are you here? Go build something amazing!",
+        "I'm sorry Dave, I'm afraid I can't do that."
+    ];
+    
+    // Pick one random message
+    $randomMessage = $messages[array_rand($messages)];
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Restricted Area</title>
+        <style>
+            body {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                height: 100vh;
+                margin: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                color: white;
+                text-align: center;
+                overflow: hidden;
+            }
+            .container {
+                background: rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                padding: 3rem;
+                border-radius: 24px;
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                max-width: 90%;
+                width: 450px;
+                transition: transform 0.3s ease;
+            }
+            .container:hover {
+                transform: translateY(-5px);
+            }
+            h1 {
+                font-size: 2.5rem;
+                margin: 0 0 1rem 0;
+                font-weight: 700;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            }
+            p {
+                font-size: 1.2rem;
+                line-height: 1.6;
+                opacity: 0.95;
+                font-weight: 400;
+            }
+            .emoji {
+                font-size: 4rem;
+                display: block;
+                margin-bottom: 1rem;
+                animation: float 3s ease-in-out infinite;
+            }
+            @keyframes float {
+                0% { transform: translateY(0px); }
+                50% { transform: translateY(-10px); }
+                100% { transform: translateY(0px); }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <span class="emoji">👻</span>
+            <h1>Access Denied</h1>
+            <p><?php echo $randomMessage; ?></p>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit; // Stop execution here so the proxy logic doesn't run
 }
+
+// ---------------------------------------------------------
+// PROXY LOGIC (Only runs if secret key is correct)
+// ---------------------------------------------------------
 
 // 3. Initialize cURL
 $ch = curl_init();
